@@ -18,13 +18,14 @@
  */
 package com.metamx.tranquility.kafka.writer;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
 import com.metamx.common.logger.Logger;
-import com.metamx.common.parsers.ParseException;
 import com.metamx.tranquility.config.DataSourceConfig;
+import com.metamx.tranquility.druid.DruidBeams;
+import com.metamx.tranquility.druid.DruidLocation;
 import com.metamx.tranquility.finagle.FinagleRegistry;
-import com.metamx.tranquility.kafka.KafkaBeamUtils;
 import com.metamx.tranquility.kafka.model.MessageCounters;
 import com.metamx.tranquility.kafka.model.PropertiesBasedKafkaConfig;
 import com.metamx.tranquility.tranquilizer.MessageDroppedException;
@@ -33,6 +34,9 @@ import com.twitter.util.FutureEventListener;
 import org.apache.curator.framework.CuratorFramework;
 import scala.runtime.BoxedUnit;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -45,12 +49,12 @@ public class TranquilityEventWriter
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private final DataSourceConfig<PropertiesBasedKafkaConfig> dataSourceConfig;
-  private final Tranquilizer<byte[]> tranquilizer;
+  private final Tranquilizer<Map<String, Object>> tranquilizer;
 
   private final AtomicLong receivedCounter = new AtomicLong();
   private final AtomicLong sentCounter = new AtomicLong();
-  private final AtomicLong droppedCounter = new AtomicLong();
-  private final AtomicLong unparseableCounter = new AtomicLong();
+  private final AtomicLong failedCounter = new AtomicLong();
+  private final AtomicLong rejectedLogCounter = new AtomicLong();
   private final AtomicReference<Throwable> exception = new AtomicReference<>();
 
   public TranquilityEventWriter(
@@ -61,19 +65,50 @@ public class TranquilityEventWriter
   )
   {
     this.dataSourceConfig = dataSourceConfig;
-    this.tranquilizer = KafkaBeamUtils.createTranquilizer(
-        topic,
-        dataSourceConfig,
-        curator,
-        finagleRegistry
-    );
+    this.tranquilizer =
+        DruidBeams.fromConfig(dataSourceConfig)
+                  .location(DruidLocation.create(
+                      dataSourceConfig.propertiesBasedConfig().druidIndexingServiceName(),
+                      dataSourceConfig.propertiesBasedConfig().useTopicAsDataSource()
+                      ? topic
+                      : dataSourceConfig.dataSource()
+                  ))
+                  .curator(curator)
+                  .finagleRegistry(finagleRegistry)
+                  .buildTranquilizer(dataSourceConfig.tranquilizerBuilder());
     this.tranquilizer.start();
   }
 
   public void send(byte[] message) throws InterruptedException
   {
     receivedCounter.incrementAndGet();
-    tranquilizer.send(message).addEventListener(
+
+    Map<String, Object> map;
+    try {
+      map = MAPPER.readValue(
+          message, new TypeReference<HashMap<String, Object>>()
+          {
+          }
+      );
+    }
+    catch (IOException e) {
+      failedCounter.incrementAndGet();
+
+      final long rejectedLogCount = rejectedLogCounter.incrementAndGet();
+      if (rejectedLogCount <= 5
+          || (rejectedLogCount <= 100 && rejectedLogCount % 10 == 0)
+          || rejectedLogCount % 100 == 0) {
+        log.debug(e, "%d message(s) failed to parse as JSON and were rejected", rejectedLogCount);
+      }
+
+      if (dataSourceConfig.propertiesBasedConfig().reportDropsAsExceptions()) {
+        throw Throwables.propagate(e);
+      }
+
+      return;
+    }
+
+    tranquilizer.send(map).addEventListener(
         new FutureEventListener<BoxedUnit>()
         {
           @Override
@@ -85,16 +120,11 @@ public class TranquilityEventWriter
           @Override
           public void onFailure(Throwable cause)
           {
-            if (cause instanceof MessageDroppedException) {
-              droppedCounter.incrementAndGet();
-              if (!dataSourceConfig.propertiesBasedConfig().reportDropsAsExceptions()) {
-                return;
-              }
-            } else if (cause instanceof ParseException) {
-              unparseableCounter.incrementAndGet();
-              if (!dataSourceConfig.propertiesBasedConfig().reportParseExceptions()) {
-                return;
-              }
+            failedCounter.incrementAndGet();
+
+            if (!dataSourceConfig.propertiesBasedConfig().reportDropsAsExceptions()
+                && cause instanceof MessageDroppedException) {
+              return;
             }
 
             exception.compareAndSet(null, cause);
@@ -126,16 +156,14 @@ public class TranquilityEventWriter
     return new MessageCounters(
         receivedCounter.get(),
         sentCounter.get(),
-        droppedCounter.get(),
-        unparseableCounter.get()
+        failedCounter.get()
     );
   }
 
   private void maybeThrow()
   {
-    final Throwable e = exception.get();
-    if (e != null) {
-      throw Throwables.propagate(e);
+    if (exception.get() != null) {
+      throw Throwables.propagate(exception.get());
     }
   }
 }
