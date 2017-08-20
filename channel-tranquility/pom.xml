@@ -15,8 +15,4 @@
         <module>kafka-decode</module>
     </modules>
 
-    <properties>
-       <tranquility.version>0.8.2</tranquility.version>
-    </properties>
-
 </project>
