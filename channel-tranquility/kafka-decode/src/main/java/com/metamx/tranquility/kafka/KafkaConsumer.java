@@ -22,6 +22,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.metamx.common.logger.Logger;
 import com.metamx.tranquility.config.DataSourceConfig;
+import com.metamx.tranquility.kafka.codec.DeflateCodec;
 import com.metamx.tranquility.kafka.model.MessageCounters;
 import com.metamx.tranquility.kafka.model.PropertiesBasedKafkaConfig;
 import com.metamx.tranquility.kafka.writer.WriterController;
@@ -212,6 +213,7 @@ public class KafkaConsumer
             {
               try {
                 final Iterator<MessageAndMetadata<byte[], byte[]>> kafkaIterator = kafkaStream.iterator();
+                final DeflateCodec deflateCodec = new DeflateCodec();
 
                 while (kafkaIterator.hasNext()) {
                   if (Thread.currentThread().isInterrupted()) {
@@ -228,7 +230,7 @@ public class KafkaConsumer
 
                   try {
                     MessageAndMetadata<byte[], byte[]> data = kafkaIterator.next();
-                    writerController.getWriter(data.topic()).send(data.message());
+                    writerController.getWriter(data.topic()).send(deflateCodec.decompress(data.message()));
                   }
                   finally {
                     commitLock.readLock().unlock();
