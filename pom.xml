@@ -8,6 +8,7 @@
     <modules>
         <module>channel-tranquility</module>
         <module>channel-audio</module>
+        <module>channel-tracker</module>
     </modules>
     <packaging>pom</packaging>
 
