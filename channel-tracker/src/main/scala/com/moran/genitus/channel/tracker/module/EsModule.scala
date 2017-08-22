@@ -15,11 +15,14 @@ class EsModule(val esConfig: EsConf) extends AbstractModule{
   @Singleton
   @Provides
   def provideESClientMap(esConfig: EsConf): Map[String,ESClient] = {
-    val eSClientmap:Map[String,ESClient] = Map[String,ESClient]()
-    //es config 配置启动获取相应的esClient
-    var configs:List[EsConfig] = new ObjectMapper().readValue(esConfig.esConfigs.toString(),classOf[List[EsConfig]])
-    configs.foreach {
-      config => eSClientmap+(config.dc->new ESClient(config.cluster_Name,config.name,config.ipAddress,config.port))
+    val eSClientmap: Map[String, ESClient] = Map[String, ESClient]()
+    if (esConfig.esConfigs.toString().equals("ScallopNone")){
+      eSClientmap+("sc"->new ESClient("cluster.name","eureka-dev", "10.1.86.58", 9300))
+    }else{
+      val configs:List[EsConfig] = new ObjectMapper().readValue(esConfig.esConfigs.toString(),classOf[List[EsConfig]])
+      configs.foreach {
+        config => eSClientmap+(config.dc->new ESClient(config.cluster_Name,config.name,config.ipAddress,config.port))
+      }
     }
     eSClientmap
   }

@@ -19,7 +19,7 @@ class RestApiRouter @Inject()(
   /** logger. */
   private[this] val log = LoggerFactory.getLogger(getClass.getName)
 
-  @Path("/query")
+  @Path("/{json}")
   @GET
   @Timed
   def getEsLogByJson(@PathParam("json") json: String): Response ={
