@@ -6,6 +6,6 @@ trait EsConf extends ScallopConf{
   lazy val esConfigs: ScallopOption[String] = opt[String](
     "es_configs",
     descr = "The configs of es cluster,json",
-    required = true,
+    required = false,
     noshort = true)
 }
