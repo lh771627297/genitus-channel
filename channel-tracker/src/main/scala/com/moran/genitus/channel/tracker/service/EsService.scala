@@ -10,7 +10,7 @@ import service.ESService
 import scala.collection.JavaConverters._
 
 
-class EsService @Inject()(eSClientMap: Map[String,ESClient]) extends AbstractIdleService{
+class EsService @Inject()(val eSClientMap: Map[String,ESClient]) extends AbstractIdleService{
   /** logger. */
   private[this] val log = LoggerFactory.getLogger(getClass.getName)
   private val esService:ESService = new ESService(eSClientMap.asJava)
