@@ -51,22 +51,8 @@ public class WriterController
   public WriterController(Map<String, DataSourceConfig<PropertiesBasedKafkaConfig>> dataSourceConfigs)
   {
     this.dataSourceConfigList = new ArrayList<>(dataSourceConfigs.values());
-    Collections.sort(
-        dataSourceConfigList,
-        new Comparator<DataSourceConfig<PropertiesBasedKafkaConfig>>()
-        {
-          @Override
-          public int compare(
-              DataSourceConfig<PropertiesBasedKafkaConfig> o1,
-              DataSourceConfig<PropertiesBasedKafkaConfig> o2
-          )
-          {
-            return o2.propertiesBasedConfig()
-                     .getTopicPatternPriority()
-                     .compareTo(o1.propertiesBasedConfig().getTopicPatternPriority());
-          }
-        }
-    );
+    dataSourceConfigList.sort((o1, o2) -> o2.propertiesBasedConfig().getTopicPatternPriority()
+            .compareTo(o1.propertiesBasedConfig().getTopicPatternPriority()));
 
     log.info("Ready: [topicPattern] -> dataSource mappings:");
     for (DataSourceConfig<PropertiesBasedKafkaConfig> dataSourceConfig : this.dataSourceConfigList) {

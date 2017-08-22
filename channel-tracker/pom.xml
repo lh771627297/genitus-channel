@@ -9,8 +9,6 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.moran.genitus.channel</groupId>
     <artifactId>channel-tracker</artifactId>
-
 
 </project>
