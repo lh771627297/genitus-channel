@@ -56,6 +56,10 @@ public abstract class PropertiesBasedKafkaConfig extends PropertiesBasedConfig
   @Default("(?!)")
   public abstract String getTopicPattern();
 
+  @Config("keyPattern")
+  @Default("(?!)")
+  public abstract String getKeyPattern();
+
   @Config("useTopicAsDataSource")
   @Default("false")
   public abstract Boolean useTopicAsDataSource();

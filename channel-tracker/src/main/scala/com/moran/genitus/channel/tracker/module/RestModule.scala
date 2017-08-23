@@ -27,7 +27,6 @@ class RestModule extends org.genitus.cardiac.rest.RestModule{
   def provideRestMapper(): ObjectMapper = {
     val mapper = new ObjectMapper()
     mapper.registerModule(DefaultScalaModule)
-
     mapper
   }
 }

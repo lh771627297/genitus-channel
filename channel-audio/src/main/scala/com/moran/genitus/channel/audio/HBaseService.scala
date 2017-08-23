@@ -30,9 +30,6 @@ class HBaseService @Inject()(
 
   def getAudio(sid: String): Array[Byte] = {
     log.info("sid = ({})", sid)
-
-
-
     try {
       val data = codec.decompress(hbaseClient.getLogs(sid).get(0).data.array())
       if (data != null) {

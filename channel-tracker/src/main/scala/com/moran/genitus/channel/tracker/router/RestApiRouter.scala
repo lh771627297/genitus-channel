@@ -19,7 +19,7 @@ class RestApiRouter @Inject()(
   /** logger. */
   private[this] val log = LoggerFactory.getLogger(getClass.getName)
 
-  @Path("/{json}")
+  @Path("search/{json}")
   @GET
   @Timed
   def getEsLogByJson(@PathParam("json") json: String): Response ={
@@ -27,7 +27,6 @@ class RestApiRouter @Inject()(
 
     try {
       val resp = esService.search(json)
-      println("---------------------------------------------"+resp)
       Response.ok(resp).build()
     } catch {
       case ex: Exception =>

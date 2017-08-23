@@ -1,11 +1,5 @@
 package com.moran.genitus.channel.tracker.config
 
-import org.rogach.scallop.{ScallopConf, ScallopOption}
+import org.rogach.scallop.ScallopConf
 
-trait EsConf extends ScallopConf{
-  lazy val esConfigs: ScallopOption[String] = opt[String](
-    "es_configs",
-    descr = "The configs of es cluster,json",
-    required = false,
-    noshort = true)
-}
+trait EsConf extends ScallopConf{}
