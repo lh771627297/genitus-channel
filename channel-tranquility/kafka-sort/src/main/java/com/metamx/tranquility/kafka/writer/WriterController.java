@@ -54,30 +54,32 @@ public class WriterController
     dataSourceConfigList.sort((o1, o2) -> o2.propertiesBasedConfig().getTopicPatternPriority()
             .compareTo(o1.propertiesBasedConfig().getTopicPatternPriority()));
 
-    log.info("Ready: [topicPattern] -> dataSource mappings:");
+    log.info("Ready: [topicPattern]|[keyPattern] -> dataSource mappings:");
     for (DataSourceConfig<PropertiesBasedKafkaConfig> dataSourceConfig : this.dataSourceConfigList) {
       log.info(
-          "  [%s] -> %s (priority: %d)",
+          "  [%s]|[%s] -> %s (priority: %d)",
           dataSourceConfig.propertiesBasedConfig().getTopicPattern(),
+          dataSourceConfig.propertiesBasedConfig().getKeyPattern(),
           dataSourceConfig.dataSource(),
           dataSourceConfig.propertiesBasedConfig().getTopicPatternPriority()
       );
     }
   }
 
-  public synchronized TranquilityEventWriter getWriter(String topic)
+  public synchronized TranquilityEventWriter getWriter(String topic,String key)
   {
-    if (!writers.containsKey(topic)) {
-      // create a EventWriter using the spec mapped to the first matching topicPattern
+    if (!writers.containsKey(topic+"|"+key)) {
+      // create a EventWriter using the spec mapped to the first matching topicPatter and key
       for (DataSourceConfig<PropertiesBasedKafkaConfig> dataSourceConfig : dataSourceConfigList) {
         if (Pattern.matches(dataSourceConfig.propertiesBasedConfig().getTopicPattern(), topic)) {
           log.info(
-              "Creating EventWriter for topic [%s] using dataSource [%s]",
+              "Creating EventWriter for topic | key  [%s] | [%s] - using dataSource [%s]",
               topic,
+              key,
               dataSourceConfig.dataSource()
           );
-          writers.put(topic, createWriter(topic, dataSourceConfig));
-          return writers.get(topic);
+          writers.put(topic+"|"+key, createWriter(dataSourceConfig));
+          return writers.get(topic+"|"+key);
         }
       }
 
@@ -110,7 +112,6 @@ public class WriterController
   }
 
   protected TranquilityEventWriter createWriter(
-      String topic,
       DataSourceConfig<PropertiesBasedKafkaConfig> dataSourceConfig
   )
   {
@@ -146,7 +147,6 @@ public class WriterController
     }
 
     return new TranquilityEventWriter(
-        topic,
         dataSourceConfig,
         curators.get(curatorKey),
         finagleRegistries.get(finagleKey)

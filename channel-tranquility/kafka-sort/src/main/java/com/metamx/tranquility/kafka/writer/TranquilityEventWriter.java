@@ -58,7 +58,6 @@ public class TranquilityEventWriter
   private final AtomicReference<Throwable> exception = new AtomicReference<>();
 
   public TranquilityEventWriter(
-      String topic,
       DataSourceConfig<PropertiesBasedKafkaConfig> dataSourceConfig,
       CuratorFramework curator,
       FinagleRegistry finagleRegistry
@@ -69,9 +68,7 @@ public class TranquilityEventWriter
         DruidBeams.fromConfig(dataSourceConfig)
                   .location(DruidLocation.create(
                       dataSourceConfig.propertiesBasedConfig().druidIndexingServiceName(),
-                      dataSourceConfig.propertiesBasedConfig().useTopicAsDataSource()
-                      ? topic
-                      : dataSourceConfig.dataSource()
+                      dataSourceConfig.dataSource()
                   ))
                   .curator(curator)
                   .finagleRegistry(finagleRegistry)
@@ -86,9 +83,7 @@ public class TranquilityEventWriter
     Map<String, Object> map;
     try {
       map = MAPPER.readValue(
-          message, new TypeReference<HashMap<String, Object>>()
-          {
-          }
+          message, new TypeReference<HashMap<String, Object>>() {}
       );
     }
     catch (IOException e) {

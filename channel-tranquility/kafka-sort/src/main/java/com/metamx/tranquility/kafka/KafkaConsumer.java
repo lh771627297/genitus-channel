@@ -222,7 +222,8 @@ public class KafkaConsumer
 
                   try {
                     MessageAndMetadata<byte[], byte[]> data = kafkaIterator.next();
-                    writerController.getWriter(data.topic()).send(deflateCodec.decompress(data.message()));
+                    String key = new String(data.key());
+                    writerController.getWriter(data.topic(),key).send(deflateCodec.decompress(data.message()));
                   }
                   finally {
                     commitLock.readLock().unlock();
