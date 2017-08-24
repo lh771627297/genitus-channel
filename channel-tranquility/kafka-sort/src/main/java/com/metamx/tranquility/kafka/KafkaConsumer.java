@@ -224,6 +224,8 @@ public class KafkaConsumer
                     MessageAndMetadata<byte[], byte[]> data = kafkaIterator.next();
                     String key = new String(data.key());
                     writerController.getWriter(data.topic(),key).send(data.message());
+                  }catch (RuntimeException e){
+                    log.warn(e.getMessage());
                   }
                   finally {
                     commitLock.readLock().unlock();

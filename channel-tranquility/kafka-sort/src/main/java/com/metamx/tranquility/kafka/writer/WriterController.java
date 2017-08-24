@@ -83,11 +83,10 @@ public class WriterController
           return writers.get(topic+"|"+key);
         }
       }
-
-      throw new RuntimeException(String.format("Kafka topicFilter allowed topic [%s] but no spec is mapped", topic));
+      throw new RuntimeException(String.format("Kafka topicFilter allowed topic [%s] but no kafka-key[%s] is mapped", topic,key));
     }
 
-    return writers.get(topic);
+    return writers.get(topic+"|"+key);
   }
 
   public Map<String, MessageCounters> flushAll() throws InterruptedException
