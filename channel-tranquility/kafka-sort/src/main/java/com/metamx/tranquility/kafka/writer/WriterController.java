@@ -71,7 +71,8 @@ public class WriterController
     if (!writers.containsKey(topic+"|"+key)) {
       // create a EventWriter using the spec mapped to the first matching topicPatter and key
       for (DataSourceConfig<PropertiesBasedKafkaConfig> dataSourceConfig : dataSourceConfigList) {
-        if (Pattern.matches(dataSourceConfig.propertiesBasedConfig().getTopicPattern(), topic)) {
+        if (Pattern.matches(dataSourceConfig.propertiesBasedConfig().getTopicPattern(), topic)
+                && Pattern.matches(dataSourceConfig.propertiesBasedConfig().getKeyPattern(), key)) {
           log.info(
               "Creating EventWriter for topic | key  [%s] | [%s] - using dataSource [%s]",
               topic,
