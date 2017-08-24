@@ -32,6 +32,7 @@ class RestApiRouter @Inject()(
     } catch {
       case ex: Exception =>
         log.error("Exception while serving request", ex)
+        Response
         throw new WebApplicationException(Status.ERROR)
     }
   }
