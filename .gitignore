@@ -1,0 +1,17 @@
+.*sw?
+*.iml
+*.log
+.idea/*
+target/
+src/main/resources/**/temp
+src/main/resources/**/build
+.DS_Store
+.rvmrc
+node_modules
+src/main/resources/assets/components
+genitus.arx
+genitus.tbz
+.classpath.txt
+dependency-reduced-pom.xml
+.arcconfig
+bin/*
